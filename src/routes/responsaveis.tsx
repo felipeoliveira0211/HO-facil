@@ -206,7 +206,9 @@ function RespPage() {
                 <Label className="text-xs font-medium">Assinatura</Label>
                 <SignaturePad
                   existingUrl={signedPreviews[r.id] ?? null}
-                  onSave={(dataUrl) => saveSignatureFor(r.id, dataUrl)}
+                  onSave={async (dataUrl) => {
+                    await saveSignatureFor(r.id, dataUrl);
+                  }}
                 />
               </div>
             </div>
