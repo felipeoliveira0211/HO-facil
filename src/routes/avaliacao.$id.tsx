@@ -154,21 +154,38 @@ function EvaluationPage() {
   };
 
   const saveSignature = async (dataUrl: string) => {
-    const blob = await (await fetch(dataUrl)).blob();
-    const path = `${user.id}/${evaluation.id}.png`;
-    const { error: upErr } = await supabase.storage
-      .from("signatures")
-      .upload(path, blob, { upsert: true, contentType: "image/png" });
-    if (upErr) {
-      toast.error(upErr.message);
-      return;
+    try {
+      const blob = await (await fetch(dataUrl)).blob();
+      const path = `${user.id}/${evaluation.id}.png`;
+      const { error: upErr } = await supabase.storage
+        .from("signatures")
+        .upload(path, blob, { upsert: true, contentType: "image/png" });
+      if (upErr) {
+        toast.error(`Falha no upload: ${upErr.message}`);
+        return;
+      }
+      const { error: dbErr } = await supabase
+        .from("evaluations")
+        .update({ worker_signature_url: path })
+        .eq("id", evaluation.id);
+      if (dbErr) {
+        toast.error(`Falha ao salvar: ${dbErr.message}`);
+        return;
+      }
+      setEvaluation({ ...evaluation, worker_signature_url: path });
+      toast.success("Assinatura registrada");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro inesperado ao salvar assinatura");
     }
+  };
+
+  const reopen = async () => {
     await supabase
       .from("evaluations")
-      .update({ worker_signature_url: path })
+      .update({ status: "paused", completed_at: null })
       .eq("id", evaluation.id);
-    setEvaluation({ ...evaluation, worker_signature_url: path });
-    toast.success("Assinatura registrada");
+    toast.success("Avaliação reaberta para edição");
+    load();
   };
 
   const finish = async () => {
