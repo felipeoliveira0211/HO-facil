@@ -14,7 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      evaluations: {
+        Row: {
+          company: string | null
+          completed_at: string | null
+          created_at: string
+          estimated_duration_minutes: number
+          form_data: Json
+          id: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["evaluation_status"]
+          title: string | null
+          type: Database["public"]["Enums"]["evaluation_type"]
+          updated_at: string
+          user_id: string
+          worker: string | null
+          worker_signature_url: string | null
+        }
+        Insert: {
+          company?: string | null
+          completed_at?: string | null
+          created_at?: string
+          estimated_duration_minutes?: number
+          form_data?: Json
+          id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["evaluation_status"]
+          title?: string | null
+          type: Database["public"]["Enums"]["evaluation_type"]
+          updated_at?: string
+          user_id: string
+          worker?: string | null
+          worker_signature_url?: string | null
+        }
+        Update: {
+          company?: string | null
+          completed_at?: string | null
+          created_at?: string
+          estimated_duration_minutes?: number
+          form_data?: Json
+          id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["evaluation_status"]
+          title?: string | null
+          type?: Database["public"]["Enums"]["evaluation_type"]
+          updated_at?: string
+          user_id?: string
+          worker?: string | null
+          worker_signature_url?: string | null
+        }
+        Relationships: []
+      }
+      time_segments: {
+        Row: {
+          ended_at: string | null
+          evaluation_id: string
+          id: string
+          started_at: string
+          user_id: string
+        }
+        Insert: {
+          ended_at?: string | null
+          evaluation_id: string
+          id?: string
+          started_at?: string
+          user_id: string
+        }
+        Update: {
+          ended_at?: string | null
+          evaluation_id?: string
+          id?: string
+          started_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_segments_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "evaluations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +105,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      evaluation_status: "draft" | "in_progress" | "paused" | "completed"
+      evaluation_type: "chemical" | "noise"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +233,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      evaluation_status: ["draft", "in_progress", "paused", "completed"],
+      evaluation_type: ["chemical", "noise"],
+    },
   },
 } as const
