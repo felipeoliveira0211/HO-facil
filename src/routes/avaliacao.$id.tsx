@@ -33,6 +33,7 @@ import { ChemicalForm } from "@/components/ChemicalForm";
 import { NoiseForm } from "@/components/NoiseForm";
 import { SignaturePad } from "@/components/SignaturePad";
 import { generateEvaluationPdf } from "@/lib/pdf";
+import { deriveTimes, toLocalTime } from "@/lib/timer-segments";
 
 export const Route = createFileRoute("/avaliacao/$id")({
   component: EvaluationPage,
