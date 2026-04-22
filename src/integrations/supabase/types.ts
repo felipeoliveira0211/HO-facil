@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      equipments: {
+        Row: {
+          brand: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          serial_number: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          serial_number?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          serial_number?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       evaluations: {
         Row: {
           company: string | null
@@ -62,6 +95,39 @@ export type Database = {
           user_id?: string
           worker?: string | null
           worker_signature_url?: string | null
+        }
+        Relationships: []
+      }
+      responsibles: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          registry: string | null
+          role: string | null
+          signature_url: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          registry?: string | null
+          role?: string | null
+          signature_url?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          registry?: string | null
+          role?: string | null
+          signature_url?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
