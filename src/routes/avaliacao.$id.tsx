@@ -33,6 +33,7 @@ import { ChemicalForm } from "@/components/ChemicalForm";
 import { NoiseForm } from "@/components/NoiseForm";
 import { SignaturePad } from "@/components/SignaturePad";
 import { generateEvaluationPdf } from "@/lib/pdf";
+import { deriveTimes, toLocalTime } from "@/lib/timer-segments";
 
 export const Route = createFileRoute("/avaliacao/$id")({
   component: EvaluationPage,
@@ -118,6 +119,32 @@ function EvaluationPage() {
     if (evaluation) scheduleSave();
   }, [evaluation, scheduleSave]);
 
+  // Auto-fill hora_inicio / intervalos / hora_fim from real segments
+  // (only when fields are empty, so user edits are preserved)
+  useEffect(() => {
+    if (!evaluation || segments.length === 0) return;
+    const t = deriveTimes(segments);
+    const updates: Record<string, string> = {};
+    if (t.startedAt && !evaluation.form_data.hora_inicio) {
+      updates.hora_inicio = toLocalTime(t.startedAt);
+    }
+    if (t.endedAt && !evaluation.form_data.hora_fim) {
+      updates.hora_fim = toLocalTime(t.endedAt);
+    }
+    if (t.intervals[0] && !evaluation.form_data.intervalo_inicio) {
+      updates.intervalo_inicio = toLocalTime(t.intervals[0].from);
+    }
+    if (t.intervals[0] && !evaluation.form_data.intervalo_fim) {
+      updates.intervalo_fim = toLocalTime(t.intervals[0].to);
+    }
+    if (Object.keys(updates).length === 0) return;
+    setEvaluation({
+      ...evaluation,
+      form_data: { ...evaluation.form_data, ...updates },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [segments]);
+
   if (loading || !user || !evaluation) {
     return (
       <AppShell>
@@ -154,21 +181,38 @@ function EvaluationPage() {
   };
 
   const saveSignature = async (dataUrl: string) => {
-    const blob = await (await fetch(dataUrl)).blob();
-    const path = `${user.id}/${evaluation.id}.png`;
-    const { error: upErr } = await supabase.storage
-      .from("signatures")
-      .upload(path, blob, { upsert: true, contentType: "image/png" });
-    if (upErr) {
-      toast.error(upErr.message);
-      return;
+    try {
+      const blob = await (await fetch(dataUrl)).blob();
+      const path = `${user.id}/${evaluation.id}.png`;
+      const { error: upErr } = await supabase.storage
+        .from("signatures")
+        .upload(path, blob, { upsert: true, contentType: "image/png" });
+      if (upErr) {
+        toast.error(`Falha no upload: ${upErr.message}`);
+        return;
+      }
+      const { error: dbErr } = await supabase
+        .from("evaluations")
+        .update({ worker_signature_url: path })
+        .eq("id", evaluation.id);
+      if (dbErr) {
+        toast.error(`Falha ao salvar: ${dbErr.message}`);
+        return;
+      }
+      setEvaluation({ ...evaluation, worker_signature_url: path });
+      toast.success("Assinatura registrada");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro inesperado ao salvar assinatura");
     }
+  };
+
+  const reopen = async () => {
     await supabase
       .from("evaluations")
-      .update({ worker_signature_url: path })
+      .update({ status: "paused", completed_at: null })
       .eq("id", evaluation.id);
-    setEvaluation({ ...evaluation, worker_signature_url: path });
-    toast.success("Assinatura registrada");
+    toast.success("Avaliação reaberta para edição");
+    load();
   };
 
   const finish = async () => {
@@ -189,21 +233,14 @@ function EvaluationPage() {
   };
 
   const exportPdf = async () => {
-    let signatureDataUrl: string | undefined;
-    if (evaluation.worker_signature_url) {
-      const { data } = await supabase.storage
-        .from("signatures")
-        .createSignedUrl(evaluation.worker_signature_url, 60);
-      if (data?.signedUrl) {
-        const res = await fetch(data.signedUrl);
-        const blob = await res.blob();
-        signatureDataUrl = await new Promise<string>((resolve) => {
-          const r = new FileReader();
-          r.onloadend = () => resolve(r.result as string);
-          r.readAsDataURL(blob);
-        });
-      }
-    }
+    const { fetchSignatureDataUrl, fetchResponsibleSignature } = await import("@/lib/signatures");
+    const [signatureDataUrl, technicianSignatureDataUrl, fieldSignatureDataUrl] = await Promise.all([
+      evaluation.worker_signature_url
+        ? fetchSignatureDataUrl(evaluation.worker_signature_url)
+        : Promise.resolve(undefined),
+      fetchResponsibleSignature(evaluation.form_data.responsavel_tecnico_id),
+      fetchResponsibleSignature(evaluation.form_data.monitoramento_campo_id),
+    ]);
     generateEvaluationPdf({
       type: evaluation.type,
       worker: evaluation.worker,
@@ -211,6 +248,8 @@ function EvaluationPage() {
       completedAt: new Date().toISOString(),
       formData: evaluation.form_data,
       signatureDataUrl,
+      technicianSignatureDataUrl,
+      fieldSignatureDataUrl,
     });
   };
 
@@ -280,6 +319,11 @@ function EvaluationPage() {
             {evaluation.status !== "completed" && (
               <Button onClick={finish} size="sm" className="bg-success hover:bg-success/90">
                 <CheckCircle2 className="mr-1.5 h-4 w-4" /> Finalizar
+              </Button>
+            )}
+            {evaluation.status === "completed" && (
+              <Button onClick={reopen} size="sm" variant="secondary">
+                Reabrir para edição
               </Button>
             )}
           </div>

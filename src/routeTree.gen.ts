@@ -9,12 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResponsaveisRouteImport } from './routes/responsaveis'
 import { Route as NovaRouteImport } from './routes/nova'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HistoricoRouteImport } from './routes/historico'
+import { Route as EquipamentosRouteImport } from './routes/equipamentos'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AvaliacaoIdRouteImport } from './routes/avaliacao.$id'
 
+const ResponsaveisRoute = ResponsaveisRouteImport.update({
+  id: '/responsaveis',
+  path: '/responsaveis',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NovaRoute = NovaRouteImport.update({
   id: '/nova',
   path: '/nova',
@@ -30,6 +37,11 @@ const HistoricoRoute = HistoricoRouteImport.update({
   path: '/historico',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EquipamentosRoute = EquipamentosRouteImport.update({
+  id: '/equipamentos',
+  path: '/equipamentos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -43,44 +55,81 @@ const AvaliacaoIdRoute = AvaliacaoIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/equipamentos': typeof EquipamentosRoute
   '/historico': typeof HistoricoRoute
   '/login': typeof LoginRoute
   '/nova': typeof NovaRoute
+  '/responsaveis': typeof ResponsaveisRoute
   '/avaliacao/$id': typeof AvaliacaoIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/equipamentos': typeof EquipamentosRoute
   '/historico': typeof HistoricoRoute
   '/login': typeof LoginRoute
   '/nova': typeof NovaRoute
+  '/responsaveis': typeof ResponsaveisRoute
   '/avaliacao/$id': typeof AvaliacaoIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/equipamentos': typeof EquipamentosRoute
   '/historico': typeof HistoricoRoute
   '/login': typeof LoginRoute
   '/nova': typeof NovaRoute
+  '/responsaveis': typeof ResponsaveisRoute
   '/avaliacao/$id': typeof AvaliacaoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/historico' | '/login' | '/nova' | '/avaliacao/$id'
+  fullPaths:
+    | '/'
+    | '/equipamentos'
+    | '/historico'
+    | '/login'
+    | '/nova'
+    | '/responsaveis'
+    | '/avaliacao/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/historico' | '/login' | '/nova' | '/avaliacao/$id'
-  id: '__root__' | '/' | '/historico' | '/login' | '/nova' | '/avaliacao/$id'
+  to:
+    | '/'
+    | '/equipamentos'
+    | '/historico'
+    | '/login'
+    | '/nova'
+    | '/responsaveis'
+    | '/avaliacao/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/equipamentos'
+    | '/historico'
+    | '/login'
+    | '/nova'
+    | '/responsaveis'
+    | '/avaliacao/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  EquipamentosRoute: typeof EquipamentosRoute
   HistoricoRoute: typeof HistoricoRoute
   LoginRoute: typeof LoginRoute
   NovaRoute: typeof NovaRoute
+  ResponsaveisRoute: typeof ResponsaveisRoute
   AvaliacaoIdRoute: typeof AvaliacaoIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/responsaveis': {
+      id: '/responsaveis'
+      path: '/responsaveis'
+      fullPath: '/responsaveis'
+      preLoaderRoute: typeof ResponsaveisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/nova': {
       id: '/nova'
       path: '/nova'
@@ -102,6 +151,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HistoricoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/equipamentos': {
+      id: '/equipamentos'
+      path: '/equipamentos'
+      fullPath: '/equipamentos'
+      preLoaderRoute: typeof EquipamentosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -121,9 +177,11 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  EquipamentosRoute: EquipamentosRoute,
   HistoricoRoute: HistoricoRoute,
   LoginRoute: LoginRoute,
   NovaRoute: NovaRoute,
+  ResponsaveisRoute: ResponsaveisRoute,
   AvaliacaoIdRoute: AvaliacaoIdRoute,
 }
 export const routeTree = rootRouteImport

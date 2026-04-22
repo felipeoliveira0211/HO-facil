@@ -1,6 +1,8 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { EquipmentSelect } from "@/components/EquipmentSelect";
+import { ResponsibleSelect } from "@/components/ResponsibleSelect";
 
 type Form = Record<string, string>;
 
@@ -78,17 +80,14 @@ export function NoiseForm({ data, onChange }: Props) {
             onChange={set("data")}
           />
           <Field k="ges" label="GES" value={data.ges || ""} onChange={set("ges")} />
-          <Field
-            k="equipamento"
-            label="Marca/Modelo equipamento"
-            value={data.equipamento || ""}
-            onChange={set("equipamento")}
-          />
-          <Field
-            k="equip_serie"
-            label="Nº identificação/série"
-            value={data.equip_serie || ""}
-            onChange={set("equip_serie")}
+        </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <EquipmentSelect
+            label="Equipamento"
+            nameKey="equipamento"
+            serialKey="equip_serie"
+            data={data}
+            onChange={onChange}
           />
         </div>
       </Section>
@@ -188,17 +187,17 @@ export function NoiseForm({ data, onChange }: Props) {
 
       <Section title="Responsáveis">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field
-            k="responsavel_tecnico"
+          <ResponsibleSelect
             label="Responsável técnico pela avaliação"
-            value={data.responsavel_tecnico || ""}
-            onChange={set("responsavel_tecnico")}
+            fieldKey="responsavel_tecnico"
+            data={data}
+            onChange={onChange}
           />
-          <Field
-            k="monitoramento_campo"
+          <ResponsibleSelect
             label="Monitoramento em campo"
-            value={data.monitoramento_campo || ""}
-            onChange={set("monitoramento_campo")}
+            fieldKey="monitoramento_campo"
+            data={data}
+            onChange={onChange}
           />
         </div>
       </Section>
