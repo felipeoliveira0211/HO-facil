@@ -13,6 +13,7 @@ import { Route as NovaRouteImport } from './routes/nova'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HistoricoRouteImport } from './routes/historico'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AvaliacaoIdRouteImport } from './routes/avaliacao.$id'
 
 const NovaRoute = NovaRouteImport.update({
   id: '/nova',
@@ -34,18 +35,25 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AvaliacaoIdRoute = AvaliacaoIdRouteImport.update({
+  id: '/avaliacao/$id',
+  path: '/avaliacao/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/historico': typeof HistoricoRoute
   '/login': typeof LoginRoute
   '/nova': typeof NovaRoute
+  '/avaliacao/$id': typeof AvaliacaoIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/historico': typeof HistoricoRoute
   '/login': typeof LoginRoute
   '/nova': typeof NovaRoute
+  '/avaliacao/$id': typeof AvaliacaoIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -53,13 +61,14 @@ export interface FileRoutesById {
   '/historico': typeof HistoricoRoute
   '/login': typeof LoginRoute
   '/nova': typeof NovaRoute
+  '/avaliacao/$id': typeof AvaliacaoIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/historico' | '/login' | '/nova'
+  fullPaths: '/' | '/historico' | '/login' | '/nova' | '/avaliacao/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/historico' | '/login' | '/nova'
-  id: '__root__' | '/' | '/historico' | '/login' | '/nova'
+  to: '/' | '/historico' | '/login' | '/nova' | '/avaliacao/$id'
+  id: '__root__' | '/' | '/historico' | '/login' | '/nova' | '/avaliacao/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -67,6 +76,7 @@ export interface RootRouteChildren {
   HistoricoRoute: typeof HistoricoRoute
   LoginRoute: typeof LoginRoute
   NovaRoute: typeof NovaRoute
+  AvaliacaoIdRoute: typeof AvaliacaoIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -99,6 +109,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/avaliacao/$id': {
+      id: '/avaliacao/$id'
+      path: '/avaliacao/$id'
+      fullPath: '/avaliacao/$id'
+      preLoaderRoute: typeof AvaliacaoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -107,6 +124,7 @@ const rootRouteChildren: RootRouteChildren = {
   HistoricoRoute: HistoricoRoute,
   LoginRoute: LoginRoute,
   NovaRoute: NovaRoute,
+  AvaliacaoIdRoute: AvaliacaoIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
