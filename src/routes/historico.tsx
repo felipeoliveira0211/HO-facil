@@ -48,21 +48,15 @@ function HistoryPage() {
   }, [user]);
 
   const exportPdf = async (item: Item) => {
-    let signatureDataUrl: string | undefined;
-    if (item.worker_signature_url) {
-      const { data } = await supabase.storage
-        .from("signatures")
-        .createSignedUrl(item.worker_signature_url, 60);
-      if (data?.signedUrl) {
-        const res = await fetch(data.signedUrl);
-        const blob = await res.blob();
-        signatureDataUrl = await new Promise<string>((resolve) => {
-          const r = new FileReader();
-          r.onloadend = () => resolve(r.result as string);
-          r.readAsDataURL(blob);
-        });
-      }
-    }
+    const { fetchSignatureDataUrl, fetchResponsibleSignature } = await import("@/lib/signatures");
+    const f = item.form_data as Record<string, string>;
+    const [signatureDataUrl, technicianSignatureDataUrl, fieldSignatureDataUrl] = await Promise.all([
+      item.worker_signature_url
+        ? fetchSignatureDataUrl(item.worker_signature_url)
+        : Promise.resolve(undefined),
+      fetchResponsibleSignature(f.responsavel_tecnico_id),
+      fetchResponsibleSignature(f.monitoramento_campo_id),
+    ]);
     generateEvaluationPdf({
       type: item.type,
       worker: item.worker,
@@ -70,6 +64,8 @@ function HistoryPage() {
       completedAt: item.completed_at,
       formData: item.form_data,
       signatureDataUrl,
+      technicianSignatureDataUrl,
+      fieldSignatureDataUrl,
     });
   };
 
