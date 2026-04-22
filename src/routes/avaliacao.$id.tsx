@@ -119,6 +119,32 @@ function EvaluationPage() {
     if (evaluation) scheduleSave();
   }, [evaluation, scheduleSave]);
 
+  // Auto-fill hora_inicio / intervalos / hora_fim from real segments
+  // (only when fields are empty, so user edits are preserved)
+  useEffect(() => {
+    if (!evaluation || segments.length === 0) return;
+    const t = deriveTimes(segments);
+    const updates: Record<string, string> = {};
+    if (t.startedAt && !evaluation.form_data.hora_inicio) {
+      updates.hora_inicio = toLocalTime(t.startedAt);
+    }
+    if (t.endedAt && !evaluation.form_data.hora_fim) {
+      updates.hora_fim = toLocalTime(t.endedAt);
+    }
+    if (t.intervals[0] && !evaluation.form_data.intervalo_inicio) {
+      updates.intervalo_inicio = toLocalTime(t.intervals[0].from);
+    }
+    if (t.intervals[0] && !evaluation.form_data.intervalo_fim) {
+      updates.intervalo_fim = toLocalTime(t.intervals[0].to);
+    }
+    if (Object.keys(updates).length === 0) return;
+    setEvaluation({
+      ...evaluation,
+      form_data: { ...evaluation.form_data, ...updates },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [segments]);
+
   if (loading || !user || !evaluation) {
     return (
       <AppShell>
