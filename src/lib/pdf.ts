@@ -9,6 +9,8 @@ interface PdfInput {
   completedAt: string | null;
   formData: Record<string, unknown>;
   signatureDataUrl?: string;
+  technicianSignatureDataUrl?: string;
+  fieldSignatureDataUrl?: string;
 }
 
 export function generateEvaluationPdf(input: PdfInput) {
@@ -132,7 +134,31 @@ export function generateEvaluationPdf(input: PdfInput) {
 
   section("Responsáveis");
   printRow("Responsável técnico:", f.responsavel_tecnico);
+  if (input.technicianSignatureDataUrl) {
+    if (y > 680) {
+      doc.addPage();
+      y = margin;
+    }
+    try {
+      doc.addImage(input.technicianSignatureDataUrl, "PNG", margin, y, 160, 50);
+    } catch {
+      /* ignore */
+    }
+    y += 56;
+  }
   printRow("Monitoramento em campo:", f.monitoramento_campo);
+  if (input.fieldSignatureDataUrl) {
+    if (y > 680) {
+      doc.addPage();
+      y = margin;
+    }
+    try {
+      doc.addImage(input.fieldSignatureDataUrl, "PNG", margin, y, 160, 50);
+    } catch {
+      /* ignore */
+    }
+    y += 56;
+  }
 
   section("Assinatura do Trabalhador");
   if (input.signatureDataUrl) {
