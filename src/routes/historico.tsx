@@ -112,9 +112,7 @@ function HistoryPage() {
                   <Download className="mr-1.5 h-4 w-4" /> PDF
                 </Button>
                 <Link to="/avaliacao/$id" params={{ id: it.id }}>
-                  <Button size="sm" variant="ghost">
-                    Ver
-                  </Button>
+                  <Button size="sm">Editar</Button>
                 </Link>
               </div>
             );

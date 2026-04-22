@@ -326,6 +326,11 @@ function EvaluationPage() {
                 <CheckCircle2 className="mr-1.5 h-4 w-4" /> Finalizar
               </Button>
             )}
+            {evaluation.status === "completed" && (
+              <Button onClick={reopen} size="sm" variant="secondary">
+                Reabrir para edição
+              </Button>
+            )}
           </div>
         </div>
         <Progress value={pct} className="mt-3 h-1.5" />
