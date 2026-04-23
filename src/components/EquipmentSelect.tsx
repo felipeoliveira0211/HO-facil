@@ -11,18 +11,21 @@ interface Equip {
 }
 
 /**
- * Dropdown of saved equipments. Fills two text fields:
- *  - `${nameKey}` -> "Brand Model" or just name
+ * Dropdown of saved equipments. Fills three text fields:
+ *  - `${brandKey}` -> brand
+ *  - `${nameKey}`  -> model/name
  *  - `${serialKey}` -> serial number
  */
 export function EquipmentSelect({
   label,
+  brandKey = "equip_marca",
   nameKey,
   serialKey,
   data,
   onChange,
 }: {
   label: string;
+  brandKey?: string;
   nameKey: string;
   serialKey: string;
   data: Record<string, string>;
@@ -41,11 +44,13 @@ export function EquipmentSelect({
   const handleSelect = (id: string) => {
     const eq = list.find((x) => x.id === id);
     if (!eq) {
+      onChange(brandKey, "");
       onChange(nameKey, "");
       onChange(serialKey, "");
       return;
     }
-    onChange(nameKey, [eq.brand, eq.name].filter(Boolean).join(" "));
+    onChange(brandKey, eq.brand || "");
+    onChange(nameKey, eq.name || "");
     onChange(serialKey, eq.serial_number || "");
   };
 
@@ -65,9 +70,14 @@ export function EquipmentSelect({
           </option>
         ))}
       </select>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         <Input
-          placeholder="Marca/Modelo"
+          placeholder="Marca"
+          value={data[brandKey] || ""}
+          onChange={(e) => onChange(brandKey, e.target.value)}
+        />
+        <Input
+          placeholder="Modelo"
           value={data[nameKey] || ""}
           onChange={(e) => onChange(nameKey, e.target.value)}
         />
