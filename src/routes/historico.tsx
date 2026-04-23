@@ -57,7 +57,7 @@ function HistoryPage() {
       fetchResponsibleSignature(f.responsavel_tecnico_id, f.responsavel_tecnico),
       fetchResponsibleSignature(f.monitoramento_campo_id, f.monitoramento_campo),
     ]);
-    generateEvaluationPdf({
+    await generateEvaluationPdf({
       type: item.type,
       worker: item.worker,
       company: item.company,

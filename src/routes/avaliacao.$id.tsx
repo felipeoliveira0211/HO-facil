@@ -305,7 +305,7 @@ function EvaluationPage() {
         evaluation.form_data.monitoramento_campo,
       ),
     ]);
-    generateEvaluationPdf({
+    await generateEvaluationPdf({
       type: evaluation.type,
       worker: evaluation.worker,
       company: evaluation.company,
