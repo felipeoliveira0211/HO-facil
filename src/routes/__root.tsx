@@ -8,14 +8,14 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "HigieneOK — Folhas de Campo Digitais" },
+      { title: "HO fácil — Folha de campo" },
       {
         name: "description",
         content:
-          "Aplicação para preenchimento digital de folhas de campo de higiene ocupacional, com cronômetro, pausa e captura de assinatura.",
+          "HO fácil: folha de campo digital para higiene ocupacional, com cronômetro, pausa e captura de assinatura.",
       },
-      { property: "og:title", content: "HigieneOK — Folhas de Campo Digitais" },
-      { name: "twitter:title", content: "HigieneOK — Folhas de Campo Digitais" },
+      { property: "og:title", content: "HO fácil — Folha de campo" },
+      { name: "twitter:title", content: "HO fácil — Folha de campo" },
       { name: "description", content: "HO-facil digitizes occupational hygiene field sheets, capturing worker signatures and tracking assessments." },
       { property: "og:description", content: "HO-facil digitizes occupational hygiene field sheets, capturing worker signatures and tracking assessments." },
       { name: "twitter:description", content: "HO-facil digitizes occupational hygiene field sheets, capturing worker signatures and tracking assessments." },

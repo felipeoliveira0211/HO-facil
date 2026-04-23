@@ -19,6 +19,7 @@ export interface EvaluationCardData {
   company: string | null;
   worker: string | null;
   estimated_duration_minutes: number;
+  form_data?: Record<string, string>;
   segments: TimeSegment[];
 }
 
@@ -99,6 +100,20 @@ export function EvaluationCard({
               {evaluation.company && (
                 <p className="text-xs text-muted-foreground">{evaluation.company}</p>
               )}
+              {(() => {
+                const fd = evaluation.form_data || {};
+                const equipLabel = [fd.equip_marca, fd.equipamento]
+                  .filter((s) => s && String(s).trim())
+                  .join(" ");
+                const serial = fd.equip_serie ? ` • S/N ${fd.equip_serie}` : "";
+                if (!equipLabel && !serial) return null;
+                return (
+                  <p className="text-xs text-muted-foreground">
+                    🔧 {equipLabel}
+                    {serial}
+                  </p>
+                );
+              })()}
             </div>
           </div>
           <Badge

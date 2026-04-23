@@ -25,9 +25,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Activity className="h-5 w-5 text-primary-foreground" strokeWidth={2.5} />
             </div>
             <div className="leading-tight">
-              <p className="font-display text-base font-bold tracking-tight">HigieneOK</p>
+              <p className="font-display text-base font-bold tracking-tight">HO fácil</p>
               <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                Higiene Ocupacional
+                Folha de campo
               </p>
             </div>
           </Link>

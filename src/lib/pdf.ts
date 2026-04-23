@@ -1,6 +1,22 @@
 import jsPDF from "jspdf";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import logoSesi from "@/assets/logo-sesi.png";
+
+async function loadImageDataUrl(url: string): Promise<string | undefined> {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onloadend = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+  } catch {
+    return undefined;
+  }
+}
 
 interface PdfInput {
   type: "chemical" | "noise";
@@ -13,7 +29,7 @@ interface PdfInput {
   fieldSignatureDataUrl?: string;
 }
 
-export function generateEvaluationPdf(input: PdfInput) {
+export async function generateEvaluationPdf(input: PdfInput) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -25,17 +41,29 @@ export function generateEvaluationPdf(input: PdfInput) {
     input.type === "chemical" ? [126, 58, 174] : [196, 88, 40];
   doc.setFillColor(...headerColor);
   doc.rect(0, 0, pageW, 70, "F");
+
+  // Watermark logo (top-left)
+  const logoDataUrl = await loadImageDataUrl(logoSesi);
+  if (logoDataUrl) {
+    try {
+      doc.addImage(logoDataUrl, "PNG", margin, 16, 60, 38);
+    } catch {
+      /* ignore */
+    }
+  }
+
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text("HigieneOK", margin, 32);
+  const titleX = margin + (logoDataUrl ? 72 : 0);
+  doc.text("HO fácil", titleX, 32);
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.text(
     input.type === "chemical"
       ? "Monitoramento de Exposição a Agentes Químicos"
       : "Monitoramento de Exposição ao Ruído",
-    margin,
+    titleX,
     52,
   );
   y = 100;
@@ -177,7 +205,7 @@ export function generateEvaluationPdf(input: PdfInput) {
   doc.setFontSize(8);
   doc.setTextColor(120, 120, 130);
   doc.text(
-    `Gerado em ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR })} • HigieneOK`,
+    `Gerado em ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR })} • HO fácil`,
     margin,
     footerY,
   );

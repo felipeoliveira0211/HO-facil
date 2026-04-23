@@ -207,10 +207,11 @@ function EvaluationPage() {
   const pct = Math.min(100, Math.max(0, (elapsed / total) * 100));
 
   const updateField = (key: string, value: string) => {
-    setEvaluation({
-      ...evaluation,
-      form_data: { ...evaluation.form_data, [key]: value },
-    });
+    setEvaluation((prev) =>
+      prev
+        ? { ...prev, form_data: { ...prev.form_data, [key]: value } }
+        : prev,
+    );
   };
 
   const toggleTimer = async () => {
@@ -305,7 +306,7 @@ function EvaluationPage() {
         evaluation.form_data.monitoramento_campo,
       ),
     ]);
-    generateEvaluationPdf({
+    await generateEvaluationPdf({
       type: evaluation.type,
       worker: evaluation.worker,
       company: evaluation.company,
