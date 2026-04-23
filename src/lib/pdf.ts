@@ -1,6 +1,22 @@
 import jsPDF from "jspdf";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import logoSesi from "@/assets/logo-sesi.png";
+
+async function loadImageDataUrl(url: string): Promise<string | undefined> {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const r = new FileReader();
+      r.onloadend = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+  } catch {
+    return undefined;
+  }
+}
 
 interface PdfInput {
   type: "chemical" | "noise";
@@ -13,7 +29,7 @@ interface PdfInput {
   fieldSignatureDataUrl?: string;
 }
 
-export function generateEvaluationPdf(input: PdfInput) {
+export async function generateEvaluationPdf(input: PdfInput) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
