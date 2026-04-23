@@ -73,9 +73,11 @@ function DashboardPage() {
             Acompanhe o cronômetro de cada monitoramento. Pause quando o trabalhador se ausentar.
           </p>
         </div>
-        <Link to="/nova" className="hidden sm:block">
+        <Link to="/nova" className="shrink-0">
           <Button className="shadow-glow">
-            <Plus className="mr-1.5 h-4 w-4" /> Nova avaliação
+            <Plus className="mr-1.5 h-4 w-4" />
+            <span className="hidden sm:inline">Nova avaliação</span>
+            <span className="sm:hidden">Nova</span>
           </Button>
         </Link>
       </div>
