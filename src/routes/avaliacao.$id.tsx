@@ -35,6 +35,11 @@ import { SignaturePad } from "@/components/SignaturePad";
 import { generateEvaluationPdf } from "@/lib/pdf";
 import { deriveTimes, toLocalTime } from "@/lib/timer-segments";
 
+const getNowLocalTime = () => {
+  const d = new Date();
+  return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
+};
+
 export const Route = createFileRoute("/avaliacao/$id")({
   component: EvaluationPage,
 });
@@ -55,16 +60,19 @@ function EvaluationPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
+  const [workerSignaturePreview, setWorkerSignaturePreview] = useState<string | null>(null);
   const [segments, setSegments] = useState<TimeSegment[]>([]);
   const [, tick] = useState(0);
   const saveTimer = useRef<number | null>(null);
   const dirty = useRef(false);
+  const overtimeWarned = useRef(false);
 
   useEffect(() => {
     if (!loading && !user) router.navigate({ to: "/login" });
   }, [user, loading, router]);
 
   const load = useCallback(async () => {
+    const { getSignedSignatureUrl } = await import("@/lib/signatures");
     const { data, error } = await supabase
       .from("evaluations")
       .select(
@@ -81,6 +89,9 @@ function EvaluationPage() {
       ...data,
       form_data: (data.form_data as Record<string, string>) || {},
     });
+    setWorkerSignaturePreview(
+      data.worker_signature_url ? ((await getSignedSignatureUrl(data.worker_signature_url)) ?? null) : null,
+    );
     setSegments(await fetchSegments(id));
   }, [id, router]);
 
@@ -95,6 +106,17 @@ function EvaluationPage() {
     const i = window.setInterval(() => tick((n) => n + 1), 1000);
     return () => window.clearInterval(i);
   }, [running]);
+
+  useEffect(() => {
+    if (!evaluation) return;
+    const total = evaluation.estimated_duration_minutes * 60;
+    const elapsed = computeElapsedSeconds(segments);
+    if (elapsed > total && !overtimeWarned.current) {
+      overtimeWarned.current = true;
+      toast.warning("O tempo estimado foi ultrapassado. A medição continua ativa.");
+    }
+    if (elapsed <= total) overtimeWarned.current = false;
+  }, [segments, evaluation]);
 
   // Debounced autosave
   const scheduleSave = useCallback(() => {
@@ -120,32 +142,46 @@ function EvaluationPage() {
   }, [evaluation, scheduleSave]);
 
   // Auto-fill hora_inicio / intervalos / hora_fim from real segments.
-  // hora_inicio + intervalo_inicio só preenchem se vazios (preserva edição manual).
-  // hora_fim e intervalo_fim sempre refletem o estado atual do timer (último segmento).
+  // hora_inicio puxa a hora atual quando ainda estiver vazio, mas segue editável.
+  // intervalo só existe quando houve pausa seguida de retomada.
+  // se a última pausa não tiver retomada, ela vira pausa final da medição e não intervalo.
   useEffect(() => {
-    if (!evaluation || segments.length === 0) return;
+    if (!evaluation) return;
+    if (segments.length === 0) {
+      if (!evaluation.form_data.hora_inicio) {
+        setEvaluation({
+          ...evaluation,
+          form_data: { ...evaluation.form_data, hora_inicio: getNowLocalTime() },
+        });
+      }
+      return;
+    }
     const t = deriveTimes(segments);
     const updates: Record<string, string> = {};
     if (t.startedAt && !evaluation.form_data.hora_inicio) {
       updates.hora_inicio = toLocalTime(t.startedAt);
     }
-    if (t.intervals[0] && !evaluation.form_data.intervalo_inicio) {
-      updates.intervalo_inicio = toLocalTime(t.intervals[0].from);
-    }
-    // intervalo_fim e hora_fim sempre reescrevem para refletir
-    // o último segmento finalizado (corrige bug de pegar a primeira pausa)
-    if (t.intervals.length > 0) {
-      const lastInterval = t.intervals[t.intervals.length - 1];
+    const lastInterval = t.intervals[t.intervals.length - 1];
+    if (lastInterval) {
+      const newIntervalInicio = toLocalTime(lastInterval.from);
       const newIntervalFim = toLocalTime(lastInterval.to);
+      if (evaluation.form_data.intervalo_inicio !== newIntervalInicio) {
+        updates.intervalo_inicio = newIntervalInicio;
+      }
       if (evaluation.form_data.intervalo_fim !== newIntervalFim) {
         updates.intervalo_fim = newIntervalFim;
       }
+    } else {
+      if (evaluation.form_data.intervalo_inicio) updates.intervalo_inicio = "";
+      if (evaluation.form_data.intervalo_fim) updates.intervalo_fim = "";
     }
-    if (t.endedAt) {
+    if (t.endedAt && !running) {
       const newHoraFim = toLocalTime(t.endedAt);
       if (evaluation.form_data.hora_fim !== newHoraFim) {
         updates.hora_fim = newHoraFim;
       }
+    } else if (running && evaluation.form_data.hora_fim) {
+      updates.hora_fim = "";
     }
     if (Object.keys(updates).length === 0) return;
     setEvaluation({
@@ -153,7 +189,7 @@ function EvaluationPage() {
       form_data: { ...evaluation.form_data, ...updates },
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [segments]);
+  }, [segments, running, evaluation]);
 
   if (loading || !user || !evaluation) {
     return (
@@ -210,6 +246,7 @@ function EvaluationPage() {
         return;
       }
       setEvaluation({ ...evaluation, worker_signature_url: path });
+      setWorkerSignaturePreview(dataUrl);
       toast.success("Assinatura registrada");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro inesperado ao salvar assinatura");
@@ -230,12 +267,23 @@ function EvaluationPage() {
     if (!evaluation.worker_signature_url) {
       if (!confirm("Nenhuma assinatura foi registrada. Finalizar mesmo assim?")) return;
     }
+    const refreshedSegments = await fetchSegments(evaluation.id);
+    setSegments(refreshedSegments);
+    const t = deriveTimes(refreshedSegments);
+    const finalFormData = {
+      ...evaluation.form_data,
+      hora_inicio: evaluation.form_data.hora_inicio || getNowLocalTime(),
+      intervalo_inicio: t.intervals.length ? toLocalTime(t.intervals[t.intervals.length - 1].from) : "",
+      intervalo_fim: t.intervals.length ? toLocalTime(t.intervals[t.intervals.length - 1].to) : "",
+      hora_fim: t.endedAt ? toLocalTime(t.endedAt) : evaluation.form_data.hora_fim || getNowLocalTime(),
+    };
+
     await supabase
       .from("evaluations")
       .update({
         status: "completed",
         completed_at: new Date().toISOString(),
-        form_data: evaluation.form_data,
+        form_data: finalFormData,
       })
       .eq("id", evaluation.id);
     toast.success("Avaliação finalizada");
@@ -243,13 +291,19 @@ function EvaluationPage() {
   };
 
   const exportPdf = async () => {
-    const { fetchSignatureDataUrl, fetchResponsibleSignature } = await import("@/lib/signatures");
+      const { fetchSignatureDataUrl, fetchResponsibleSignature } = await import("@/lib/signatures");
     const [signatureDataUrl, technicianSignatureDataUrl, fieldSignatureDataUrl] = await Promise.all([
       evaluation.worker_signature_url
         ? fetchSignatureDataUrl(evaluation.worker_signature_url)
         : Promise.resolve(undefined),
-      fetchResponsibleSignature(evaluation.form_data.responsavel_tecnico_id),
-      fetchResponsibleSignature(evaluation.form_data.monitoramento_campo_id),
+      fetchResponsibleSignature(
+        evaluation.form_data.responsavel_tecnico_id,
+        evaluation.form_data.responsavel_tecnico,
+      ),
+      fetchResponsibleSignature(
+        evaluation.form_data.monitoramento_campo_id,
+        evaluation.form_data.monitoramento_campo,
+      ),
     ]);
     generateEvaluationPdf({
       type: evaluation.type,
@@ -397,7 +451,7 @@ function EvaluationPage() {
           <h3 className="mb-4 font-display text-sm font-semibold uppercase tracking-wider text-primary">
             Assinatura do Trabalhador
           </h3>
-          <SignaturePad onSave={saveSignature} />
+          <SignaturePad existingUrl={workerSignaturePreview} onSave={saveSignature} />
         </div>
 
         <div className="flex items-center justify-between gap-2 pt-2">

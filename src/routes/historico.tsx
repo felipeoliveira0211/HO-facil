@@ -54,8 +54,8 @@ function HistoryPage() {
       item.worker_signature_url
         ? fetchSignatureDataUrl(item.worker_signature_url)
         : Promise.resolve(undefined),
-      fetchResponsibleSignature(f.responsavel_tecnico_id),
-      fetchResponsibleSignature(f.monitoramento_campo_id),
+      fetchResponsibleSignature(f.responsavel_tecnico_id, f.responsavel_tecnico),
+      fetchResponsibleSignature(f.monitoramento_campo_id, f.monitoramento_campo),
     ]);
     generateEvaluationPdf({
       type: item.type,

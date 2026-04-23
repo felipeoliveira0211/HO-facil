@@ -16,6 +16,7 @@ interface PdfInput {
 export function generateEvaluationPdf(input: PdfInput) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
   const margin = 40;
   let y = margin;
 
@@ -71,6 +72,35 @@ export function generateEvaluationPdf(input: PdfInput) {
     doc.setTextColor(20, 20, 30);
     doc.setFontSize(10);
     y += 22;
+  };
+
+  const signatureBlock = (label: string, signatureDataUrl?: string) => {
+    const blockHeight = signatureDataUrl ? 92 : 44;
+    if (y + blockHeight > pageH - 48) {
+      doc.addPage();
+      y = margin;
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.text(label, margin, y);
+    y += 12;
+
+    doc.setDrawColor(210, 215, 223);
+    doc.line(margin, y + 34, margin + 170, y + 34);
+
+    if (signatureDataUrl) {
+      try {
+        doc.addImage(signatureDataUrl, "PNG", margin + 8, y - 4, 120, 36);
+      } catch {
+        doc.setFont("helvetica", "normal");
+        doc.text("(assinatura não pôde ser carregada)", margin, y + 16);
+      }
+    } else {
+      doc.setFont("helvetica", "normal");
+      doc.text("(sem assinatura registrada)", margin, y + 16);
+    }
+
+    y += 52;
   };
 
   const f = input.formData as Record<string, string>;
@@ -135,48 +165,12 @@ export function generateEvaluationPdf(input: PdfInput) {
 
   section("Responsáveis");
   printRow("Responsável técnico:", f.responsavel_tecnico);
-  if (input.technicianSignatureDataUrl) {
-    if (y > 680) {
-      doc.addPage();
-      y = margin;
-    }
-    try {
-      doc.addImage(input.technicianSignatureDataUrl, "PNG", margin, y, 160, 50);
-    } catch {
-      /* ignore */
-    }
-    y += 56;
-  }
+  signatureBlock("Assinatura do responsável técnico", input.technicianSignatureDataUrl);
   printRow("Monitoramento em campo:", f.monitoramento_campo);
-  if (input.fieldSignatureDataUrl) {
-    if (y > 680) {
-      doc.addPage();
-      y = margin;
-    }
-    try {
-      doc.addImage(input.fieldSignatureDataUrl, "PNG", margin, y, 160, 50);
-    } catch {
-      /* ignore */
-    }
-    y += 56;
-  }
+  signatureBlock("Assinatura do monitoramento em campo", input.fieldSignatureDataUrl);
 
   section("Assinatura do Trabalhador");
-  if (input.signatureDataUrl) {
-    if (y > 680) {
-      doc.addPage();
-      y = margin;
-    }
-    try {
-      doc.addImage(input.signatureDataUrl, "PNG", margin, y, 200, 70);
-    } catch {
-      doc.text("(assinatura não pôde ser carregada)", margin, y + 16);
-    }
-    y += 80;
-  } else {
-    doc.text("(sem assinatura registrada)", margin, y + 4);
-    y += 20;
-  }
+  signatureBlock("Assinatura do trabalhador", input.signatureDataUrl);
 
   // Footer
   const footerY = doc.internal.pageSize.getHeight() - 24;
