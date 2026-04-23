@@ -41,17 +41,29 @@ export async function generateEvaluationPdf(input: PdfInput) {
     input.type === "chemical" ? [126, 58, 174] : [196, 88, 40];
   doc.setFillColor(...headerColor);
   doc.rect(0, 0, pageW, 70, "F");
+
+  // Watermark logo (top-left)
+  const logoDataUrl = await loadImageDataUrl(logoSesi);
+  if (logoDataUrl) {
+    try {
+      doc.addImage(logoDataUrl, "PNG", margin, 16, 60, 38);
+    } catch {
+      /* ignore */
+    }
+  }
+
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text("HigieneOK", margin, 32);
+  const titleX = margin + (logoDataUrl ? 72 : 0);
+  doc.text("HO fácil", titleX, 32);
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.text(
     input.type === "chemical"
       ? "Monitoramento de Exposição a Agentes Químicos"
       : "Monitoramento de Exposição ao Ruído",
-    margin,
+    titleX,
     52,
   );
   y = 100;
