@@ -205,7 +205,7 @@ export async function generateEvaluationPdf(input: PdfInput) {
   doc.setFontSize(8);
   doc.setTextColor(120, 120, 130);
   doc.text(
-    `Gerado em ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR })} • HigieneOK`,
+    `Gerado em ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR })} • HO fácil`,
     margin,
     footerY,
   );
