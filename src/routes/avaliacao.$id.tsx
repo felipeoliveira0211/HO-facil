@@ -119,8 +119,9 @@ function EvaluationPage() {
     if (evaluation) scheduleSave();
   }, [evaluation, scheduleSave]);
 
-  // Auto-fill hora_inicio / intervalos / hora_fim from real segments
-  // (only when fields are empty, so user edits are preserved)
+  // Auto-fill hora_inicio / intervalos / hora_fim from real segments.
+  // hora_inicio + intervalo_inicio só preenchem se vazios (preserva edição manual).
+  // hora_fim e intervalo_fim sempre refletem o estado atual do timer (último segmento).
   useEffect(() => {
     if (!evaluation || segments.length === 0) return;
     const t = deriveTimes(segments);
@@ -128,14 +129,23 @@ function EvaluationPage() {
     if (t.startedAt && !evaluation.form_data.hora_inicio) {
       updates.hora_inicio = toLocalTime(t.startedAt);
     }
-    if (t.endedAt && !evaluation.form_data.hora_fim) {
-      updates.hora_fim = toLocalTime(t.endedAt);
-    }
     if (t.intervals[0] && !evaluation.form_data.intervalo_inicio) {
       updates.intervalo_inicio = toLocalTime(t.intervals[0].from);
     }
-    if (t.intervals[0] && !evaluation.form_data.intervalo_fim) {
-      updates.intervalo_fim = toLocalTime(t.intervals[0].to);
+    // intervalo_fim e hora_fim sempre reescrevem para refletir
+    // o último segmento finalizado (corrige bug de pegar a primeira pausa)
+    if (t.intervals.length > 0) {
+      const lastInterval = t.intervals[t.intervals.length - 1];
+      const newIntervalFim = toLocalTime(lastInterval.to);
+      if (evaluation.form_data.intervalo_fim !== newIntervalFim) {
+        updates.intervalo_fim = newIntervalFim;
+      }
+    }
+    if (t.endedAt) {
+      const newHoraFim = toLocalTime(t.endedAt);
+      if (evaluation.form_data.hora_fim !== newHoraFim) {
+        updates.hora_fim = newHoraFim;
+      }
     }
     if (Object.keys(updates).length === 0) return;
     setEvaluation({

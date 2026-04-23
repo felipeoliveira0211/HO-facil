@@ -94,7 +94,8 @@ export function generateEvaluationPdf(input: PdfInput) {
     printRow("Código do amostrador:", f.codigo_amostrador);
     printRow("Agentes:", f.agentes);
   }
-  printRow("Marca/Modelo equipamento:", f.equipamento);
+  printRow("Marca:", f.equip_marca);
+  printRow("Modelo equipamento:", f.equipamento);
   printRow("Nº de identificação/série:", f.equip_serie);
 
   section("Horário da Avaliação");

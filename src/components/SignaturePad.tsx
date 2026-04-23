@@ -16,12 +16,20 @@ export function SignaturePad({ onSave, existingUrl }: SignaturePadProps) {
   const clear = () => ref.current?.clear();
 
   const save = async () => {
-    if (!ref.current || ref.current.isEmpty()) return;
+    if (!ref.current || ref.current.isEmpty()) {
+      console.warn("[SignaturePad] canvas vazio");
+      return;
+    }
     setSaving(true);
     try {
-      const dataUrl = ref.current.getTrimmedCanvas().toDataURL("image/png");
+      // NOTE: getTrimmedCanvas() tem bug em algumas builds (canvas em branco).
+      // Usar o canvas direto via getCanvas() é confiável.
+      const canvas = ref.current.getCanvas();
+      const dataUrl = canvas.toDataURL("image/png");
       await onSave(dataUrl);
       setSavedPreview(dataUrl);
+    } catch (err) {
+      console.error("[SignaturePad] erro ao salvar", err);
     } finally {
       setSaving(false);
     }
