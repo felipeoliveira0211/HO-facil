@@ -60,16 +60,19 @@ function EvaluationPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [evaluation, setEvaluation] = useState<Evaluation | null>(null);
+  const [workerSignaturePreview, setWorkerSignaturePreview] = useState<string | null>(null);
   const [segments, setSegments] = useState<TimeSegment[]>([]);
   const [, tick] = useState(0);
   const saveTimer = useRef<number | null>(null);
   const dirty = useRef(false);
+  const overtimeWarned = useRef(false);
 
   useEffect(() => {
     if (!loading && !user) router.navigate({ to: "/login" });
   }, [user, loading, router]);
 
   const load = useCallback(async () => {
+    const { getSignedSignatureUrl } = await import("@/lib/signatures");
     const { data, error } = await supabase
       .from("evaluations")
       .select(
@@ -86,6 +89,9 @@ function EvaluationPage() {
       ...data,
       form_data: (data.form_data as Record<string, string>) || {},
     });
+    setWorkerSignaturePreview(
+      data.worker_signature_url ? ((await getSignedSignatureUrl(data.worker_signature_url)) ?? null) : null,
+    );
     setSegments(await fetchSegments(id));
   }, [id, router]);
 
@@ -100,6 +106,17 @@ function EvaluationPage() {
     const i = window.setInterval(() => tick((n) => n + 1), 1000);
     return () => window.clearInterval(i);
   }, [running]);
+
+  useEffect(() => {
+    if (!evaluation) return;
+    const total = evaluation.estimated_duration_minutes * 60;
+    const elapsed = computeElapsedSeconds(segments);
+    if (elapsed > total && !overtimeWarned.current) {
+      overtimeWarned.current = true;
+      toast.warning("O tempo estimado foi ultrapassado. A medição continua ativa.");
+    }
+    if (elapsed <= total) overtimeWarned.current = false;
+  }, [segments, evaluation]);
 
   // Debounced autosave
   const scheduleSave = useCallback(() => {
@@ -229,6 +246,7 @@ function EvaluationPage() {
         return;
       }
       setEvaluation({ ...evaluation, worker_signature_url: path });
+      setWorkerSignaturePreview(dataUrl);
       toast.success("Assinatura registrada");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro inesperado ao salvar assinatura");
@@ -433,7 +451,7 @@ function EvaluationPage() {
           <h3 className="mb-4 font-display text-sm font-semibold uppercase tracking-wider text-primary">
             Assinatura do Trabalhador
           </h3>
-          <SignaturePad existingUrl={evaluation.worker_signature_url ?? null} onSave={saveSignature} />
+          <SignaturePad existingUrl={workerSignaturePreview} onSave={saveSignature} />
         </div>
 
         <div className="flex items-center justify-between gap-2 pt-2">
