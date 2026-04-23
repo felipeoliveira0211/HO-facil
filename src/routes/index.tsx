@@ -26,7 +26,7 @@ function DashboardPage() {
     setFetching(true);
     const { data: evals } = await supabase
       .from("evaluations")
-      .select("id, type, status, title, company, worker, estimated_duration_minutes")
+      .select("id, type, status, title, company, worker, estimated_duration_minutes, form_data")
       .eq("user_id", user.id)
       .neq("status", "completed")
       .order("updated_at", { ascending: false });
@@ -49,6 +49,7 @@ function DashboardPage() {
     setItems(
       (evals ?? []).map((e) => ({
         ...e,
+        form_data: (e.form_data as Record<string, string>) || {},
         segments: segments.filter((s) => s.evaluation_id === e.id),
       })),
     );
