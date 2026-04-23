@@ -44,10 +44,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body className="safe-area-all">
         {children}
         <Scripts />
-      </body>
+      <body className="safe-area-all">
     </html>
   );
 }
