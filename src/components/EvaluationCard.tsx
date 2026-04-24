@@ -97,9 +97,12 @@ export function EvaluationCard({
               <h3 className="font-display text-base font-semibold leading-tight">
                 {evaluation.worker || evaluation.title || "Sem identificação"}
               </h3>
-              {evaluation.company && (
-                <p className="text-xs text-muted-foreground">{evaluation.company}</p>
-              )}
+              {(() => {
+                const setor = evaluation.form_data?.setor?.trim();
+                const parts = [evaluation.company, setor].filter((s) => s && String(s).trim());
+                if (parts.length === 0) return null;
+                return <p className="text-xs text-muted-foreground">{parts.join(" / ")}</p>;
+              })()}
               {(() => {
                 const fd = evaluation.form_data || {};
                 const equipLabel = [fd.equip_marca, fd.equipamento]
