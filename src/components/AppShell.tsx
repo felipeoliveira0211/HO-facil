@@ -1,10 +1,10 @@
 import { Link, useRouter } from "@tanstack/react-router";
-import { Activity, LogOut, Plus, LayoutDashboard, FileText, Wrench, Users } from "lucide-react";
+import { Activity, LogOut, Plus, LayoutDashboard, FileText, Wrench, Users, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { signOut, user } = useAuth();
+  const { signOut, user, isAdmin } = useAuth();
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -44,6 +44,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Link to="/responsaveis" activeProps={activeCls} className={navLink}>
               <Users className="h-4 w-4" /> Responsáveis
             </Link>
+            {isAdmin && (
+              <Link to="/admin" activeProps={activeCls} className={navLink}>
+                <Shield className="h-4 w-4" /> Admin
+              </Link>
+            )}
           </nav>
           <div className="flex items-center gap-2">
             <Link to="/nova">
@@ -71,6 +76,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link to="/responsaveis" activeProps={activeCls} className={navLink}>
             <Users className="h-4 w-4" /> Resp.
           </Link>
+          {isAdmin && (
+            <Link to="/admin" activeProps={activeCls} className={navLink}>
+              <Shield className="h-4 w-4" /> Admin
+            </Link>
+          )}
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-3 py-4 sm:px-6 sm:py-8">{children}</main>
