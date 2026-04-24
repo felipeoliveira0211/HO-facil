@@ -191,6 +191,8 @@ export async function generateEvaluationPdf(input: PdfInput) {
     printRow("Condições Climáticas:", f.condicoes);
   }
 
+  doc.addPage();
+  y = margin;
   section("Responsáveis");
   printRow("Responsável técnico:", f.responsavel_tecnico);
   signatureBlock("Assinatura do responsável técnico", input.technicianSignatureDataUrl);

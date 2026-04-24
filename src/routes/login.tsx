@@ -1,6 +1,7 @@
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -95,6 +96,30 @@ function LoginPage() {
               {busy ? "Aguarde..." : mode === "signin" ? "Entrar" : "Criar conta"}
             </Button>
           </form>
+
+          {mode === "signin" && (
+            <button
+              type="button"
+              onClick={async () => {
+                if (!email) {
+                  toast.error("Informe seu e-mail acima primeiro.");
+                  return;
+                }
+                try {
+                  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: `${window.location.origin}/reset-password`,
+                  });
+                  if (error) throw error;
+                  toast.success("Enviamos um link de redefinição para seu e-mail.");
+                } catch (err) {
+                  toast.error(err instanceof Error ? err.message : "Erro ao enviar e-mail");
+                }
+              }}
+              className="mt-3 w-full text-sm text-primary hover:underline"
+            >
+              Esqueci minha senha
+            </button>
+          )}
 
           <button
             type="button"
