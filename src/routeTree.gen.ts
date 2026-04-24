@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResponsaveisRouteImport } from './routes/responsaveis'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as NovaRouteImport } from './routes/nova'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HistoricoRouteImport } from './routes/historico'
@@ -20,6 +21,11 @@ import { Route as AvaliacaoIdRouteImport } from './routes/avaliacao.$id'
 const ResponsaveisRoute = ResponsaveisRouteImport.update({
   id: '/responsaveis',
   path: '/responsaveis',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NovaRoute = NovaRouteImport.update({
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/historico': typeof HistoricoRoute
   '/login': typeof LoginRoute
   '/nova': typeof NovaRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/responsaveis': typeof ResponsaveisRoute
   '/avaliacao/$id': typeof AvaliacaoIdRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/historico': typeof HistoricoRoute
   '/login': typeof LoginRoute
   '/nova': typeof NovaRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/responsaveis': typeof ResponsaveisRoute
   '/avaliacao/$id': typeof AvaliacaoIdRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/historico': typeof HistoricoRoute
   '/login': typeof LoginRoute
   '/nova': typeof NovaRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/responsaveis': typeof ResponsaveisRoute
   '/avaliacao/$id': typeof AvaliacaoIdRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/historico'
     | '/login'
     | '/nova'
+    | '/reset-password'
     | '/responsaveis'
     | '/avaliacao/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/historico'
     | '/login'
     | '/nova'
+    | '/reset-password'
     | '/responsaveis'
     | '/avaliacao/$id'
   id:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/historico'
     | '/login'
     | '/nova'
+    | '/reset-password'
     | '/responsaveis'
     | '/avaliacao/$id'
   fileRoutesById: FileRoutesById
@@ -117,6 +129,7 @@ export interface RootRouteChildren {
   HistoricoRoute: typeof HistoricoRoute
   LoginRoute: typeof LoginRoute
   NovaRoute: typeof NovaRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   ResponsaveisRoute: typeof ResponsaveisRoute
   AvaliacaoIdRoute: typeof AvaliacaoIdRoute
 }
@@ -128,6 +141,13 @@ declare module '@tanstack/react-router' {
       path: '/responsaveis'
       fullPath: '/responsaveis'
       preLoaderRoute: typeof ResponsaveisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/nova': {
@@ -181,6 +201,7 @@ const rootRouteChildren: RootRouteChildren = {
   HistoricoRoute: HistoricoRoute,
   LoginRoute: LoginRoute,
   NovaRoute: NovaRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   ResponsaveisRoute: ResponsaveisRoute,
   AvaliacaoIdRoute: AvaliacaoIdRoute,
 }
