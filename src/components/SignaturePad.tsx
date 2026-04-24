@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { Button } from "@/components/ui/button";
 import { Eraser, Check } from "lucide-react";
@@ -12,6 +12,10 @@ export function SignaturePad({ onSave, existingUrl }: SignaturePadProps) {
   const ref = useRef<SignatureCanvas | null>(null);
   const [saving, setSaving] = useState(false);
   const [savedPreview, setSavedPreview] = useState<string | null>(existingUrl ?? null);
+
+  useEffect(() => {
+    setSavedPreview(existingUrl ?? null);
+  }, [existingUrl]);
 
   const clear = () => ref.current?.clear();
 
