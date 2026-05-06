@@ -179,7 +179,7 @@ async function push(userId: string) {
   const items = await listOutbox();
   for (const item of items) {
     try {
-      let res;
+      
       // We bypass strict per-table typing here because the outbox is generic.
       // The payloads are constructed in the repo layer with the correct shape.
       const tbl = supabase.from(item.table) as unknown as {
