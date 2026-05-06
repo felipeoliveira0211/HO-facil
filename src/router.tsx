@@ -1,6 +1,13 @@
 import { createRouter, useRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
+// Boot offline + sync infrastructure (browser only). Safe to import here:
+// the modules are no-ops on the server.
+if (typeof window !== "undefined") {
+  void import("./lib/pwa-register").then((m) => m.registerPWA());
+  void import("./lib/sync/engine").then((m) => m.startSyncLoop());
+}
+
 function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
   return (

@@ -2,6 +2,7 @@ import { Link, useRouter } from "@tanstack/react-router";
 import { Activity, LogOut, Plus, LayoutDashboard, FileText, Wrench, Users, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { SyncBadge } from "@/components/SyncBadge";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { signOut, user, isAdmin } = useAuth();
@@ -51,6 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </nav>
           <div className="flex items-center gap-2">
+            <SyncBadge />
             <Link to="/nova">
               <Button size="sm" className="shadow-glow">
                 <Plus className="mr-1 h-4 w-4" /> Nova

@@ -1,66 +1,51 @@
 import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { useAuth } from "@/lib/auth";
-import { supabase } from "@/integrations/supabase/client";
 import { EvaluationCard, type EvaluationCardData } from "@/components/EvaluationCard";
 import { Button } from "@/components/ui/button";
 import { Plus, ClipboardList } from "lucide-react";
+import { useEvaluations } from "@/lib/repo/evaluations";
+import { liveQuery } from "dexie";
+import { getDb, type LocalTimeSegment } from "@/lib/db/local";
 
-export const Route = createFileRoute("/")({
-  component: DashboardPage,
-});
+export const Route = createFileRoute("/")({ component: DashboardPage });
 
 function DashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [items, setItems] = useState<EvaluationCardData[]>([]);
-  const [fetching, setFetching] = useState(true);
+  const evaluations = useEvaluations({ userId: user?.id, excludeCompleted: true });
+  const [segmentsByEval, setSegmentsByEval] = useState<Record<string, LocalTimeSegment[]>>({});
 
   useEffect(() => {
     if (!loading && !user) router.navigate({ to: "/login" });
   }, [user, loading, router]);
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    setFetching(true);
-    const { data: evals } = await supabase
-      .from("evaluations")
-      .select("id, type, status, title, company, worker, estimated_duration_minutes, form_data")
-      .eq("user_id", user.id)
-      .neq("status", "completed")
-      .order("updated_at", { ascending: false });
-
-    const ids = (evals ?? []).map((e) => e.id);
-    let segments: Array<{
-      id: string;
-      evaluation_id: string;
-      started_at: string;
-      ended_at: string | null;
-    }> = [];
-    if (ids.length) {
-      const { data } = await supabase
-        .from("time_segments")
-        .select("id, evaluation_id, started_at, ended_at")
-        .in("evaluation_id", ids);
-      segments = data ?? [];
-    }
-
-    setItems(
-      (evals ?? []).map((e) => ({
-        ...e,
-        form_data: (e.form_data as Record<string, string>) || {},
-        segments: segments.filter((s) => s.evaluation_id === e.id),
-      })),
-    );
-    setFetching(false);
-  }, [user]);
-
   useEffect(() => {
-    if (user) load();
-  }, [user, load]);
+    const sub = liveQuery(async () => getDb().time_segments.toArray()).subscribe({
+      next: (all) => {
+        const grouped: Record<string, LocalTimeSegment[]> = {};
+        for (const s of all) (grouped[s.evaluation_id] ||= []).push(s);
+        setSegmentsByEval(grouped);
+      },
+    });
+    return () => sub.unsubscribe();
+  }, []);
 
   if (loading || !user) return null;
+
+  const items: EvaluationCardData[] = evaluations.map((e) => ({
+    id: e.id,
+    type: e.type,
+    status: e.status,
+    title: e.title,
+    company: e.company,
+    worker: e.worker,
+    estimated_duration_minutes: e.estimated_duration_minutes,
+    form_data: e.form_data,
+    segments: segmentsByEval[e.id] || [],
+    pending: !!e._pending,
+  }));
 
   return (
     <AppShell>
@@ -82,19 +67,11 @@ function DashboardPage() {
         </Link>
       </div>
 
-      {fetching ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="h-64 animate-pulse rounded-2xl bg-muted/60" />
-          ))}
-        </div>
-      ) : items.length === 0 ? (
+      {items.length === 0 ? (
         <EmptyState />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((ev) => (
-            <EvaluationCard key={ev.id} evaluation={ev} onChange={load} />
-          ))}
+          {items.map((ev) => <EvaluationCard key={ev.id} evaluation={ev} onChange={() => {}} />)}
         </div>
       )}
     </AppShell>
@@ -109,13 +86,10 @@ function EmptyState() {
       </div>
       <h3 className="mt-4 font-display text-lg font-semibold">Nenhuma avaliação em aberto</h3>
       <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
-        Crie sua primeira folha de campo digital. Você pode preencher gradualmente conforme a
-        demanda.
+        Crie sua primeira folha de campo digital. Você pode preencher gradualmente conforme a demanda.
       </p>
       <Link to="/nova" className="mt-5 inline-block">
-        <Button className="shadow-glow">
-          <Plus className="mr-1.5 h-4 w-4" /> Nova avaliação
-        </Button>
+        <Button className="shadow-glow"><Plus className="mr-1.5 h-4 w-4" /> Nova avaliação</Button>
       </Link>
     </div>
   );
