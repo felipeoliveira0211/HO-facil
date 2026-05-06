@@ -2,6 +2,7 @@ import { Link, useRouter } from "@tanstack/react-router";
 import { Activity, LogOut, Plus, LayoutDashboard, FileText, Wrench, Users, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
+import { SyncBadge } from "@/components/SyncBadge";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { signOut, user, isAdmin } = useAuth();
