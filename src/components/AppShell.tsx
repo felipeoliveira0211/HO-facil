@@ -52,6 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             )}
           </nav>
           <div className="flex items-center gap-2">
+            <SyncBadge />
             <Link to="/nova">
               <Button size="sm" className="shadow-glow">
                 <Plus className="mr-1 h-4 w-4" /> Nova
