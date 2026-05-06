@@ -180,16 +180,21 @@ async function push(userId: string) {
   for (const item of items) {
     try {
       let res;
+      // We bypass strict per-table typing here because the outbox is generic.
+      // The payloads are constructed in the repo layer with the correct shape.
+      const tbl = supabase.from(item.table) as unknown as {
+        delete: () => { eq: (c: string, v: string) => Promise<{ error: { message: string; code?: string } | null }> };
+        upsert: (p: unknown, o: { onConflict: string }) => Promise<{ error: { message: string; code?: string } | null }>;
+        update: (p: unknown) => { eq: (c: string, v: string) => Promise<{ error: { message: string; code?: string } | null }> };
+      };
+      let res: { error: { message: string; code?: string } | null };
       if (item.op === "delete") {
-        res = await supabase.from(item.table).delete().eq("id", item.rowId);
+        res = await tbl.delete().eq("id", item.rowId);
       } else if (item.op === "insert") {
-        // Upsert handles the case where a previous push partially succeeded
-        // and we are retrying with the same id.
-        res = await supabase.from(item.table).upsert(item.payload, { onConflict: "id" });
+        res = await tbl.upsert(item.payload, { onConflict: "id" });
       } else {
-        // update
         const { id, ...patch } = item.payload as Record<string, unknown> & { id: string };
-        res = await supabase.from(item.table).update(patch).eq("id", id);
+        res = await tbl.update(patch).eq("id", id);
       }
 
       if (res.error) {

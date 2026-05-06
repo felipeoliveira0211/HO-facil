@@ -75,7 +75,7 @@ export async function updateEvaluation(
     "started_at",
     "completed_at",
   ] as const) {
-    if (k in patch) payload[k] = (next as Record<string, unknown>)[k];
+    if (k in patch) payload[k] = (next as unknown as Record<string, unknown>)[k];
   }
   await enqueue("evaluations", "update", id, payload);
 }
