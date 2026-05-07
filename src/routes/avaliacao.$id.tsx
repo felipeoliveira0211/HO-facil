@@ -150,14 +150,20 @@ function EvaluationPage() {
   const pct = Math.min(100, Math.max(0, (elapsed / total) * 100));
 
   const updateField = (key: string, value: string) => {
-    const fd = { ...view.form_data, [key]: value };
-    const patch = { ...(localPatch ?? {}), form_data: fd };
-    setLocalPatch(patch); scheduleSave(patch);
+    setLocalPatch((prev) => {
+      const baseFd = prev?.form_data ?? evaluation?.form_data ?? {};
+      const next = { ...(prev ?? {}), form_data: { ...baseFd, [key]: value } };
+      scheduleSave(next);
+      return next;
+    });
   };
 
   const setTopField = (key: "company" | "worker" | "estimated_duration_minutes", value: string | number) => {
-    const patch = { ...(localPatch ?? {}), [key]: value } as typeof localPatch;
-    setLocalPatch(patch); scheduleSave(patch);
+    setLocalPatch((prev) => {
+      const next = { ...(prev ?? {}), [key]: value } as NonNullable<typeof prev>;
+      scheduleSave(next);
+      return next;
+    });
   };
 
   const toggleTimer = async () => {
