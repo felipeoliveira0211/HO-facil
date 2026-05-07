@@ -163,7 +163,12 @@ function EvaluationPage() {
   const toggleTimer = async () => {
     try {
       if (running) await pauseTimerLocal(id);
-      else await startTimerLocal(id, user.id);
+      else {
+        // If user entered hora_inicio earlier than now and no segments yet, start from that time.
+        const hasSegments = segments.length > 0;
+        const override = !hasSegments ? localTimeToTodayISO(view?.form_data?.hora_inicio) : undefined;
+        await startTimerLocal(id, user.id, override);
+      }
     } catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
   };
 
