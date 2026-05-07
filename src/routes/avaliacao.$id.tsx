@@ -105,38 +105,36 @@ function EvaluationPage() {
 
   // Auto-fill hora_inicio / intervalos / hora_fim from real segments
   useEffect(() => {
-    if (!view) return;
-    const fd = view.form_data;
-    if (segments.length === 0) {
-      if (!fd.hora_inicio) {
-        const next = { ...fd, hora_inicio: getNowLocalTime() };
-        const patch = { ...(localPatch ?? {}), form_data: next };
-        setLocalPatch(patch); scheduleSave(patch);
+    if (!evaluation) return;
+    setLocalPatch((prev) => {
+      const fd = prev?.form_data ?? evaluation.form_data ?? {};
+      const updates: Record<string, string> = {};
+      if (segments.length === 0) {
+        if (!fd.hora_inicio) updates.hora_inicio = getNowLocalTime();
+      } else {
+        const t = deriveTimes(segments);
+        if (t.startedAt && !fd.hora_inicio) updates.hora_inicio = toLocalTime(t.startedAt);
+        const lastInterval = t.intervals[t.intervals.length - 1];
+        if (lastInterval) {
+          const ni = toLocalTime(lastInterval.from), nf = toLocalTime(lastInterval.to);
+          if (fd.intervalo_inicio !== ni) updates.intervalo_inicio = ni;
+          if (fd.intervalo_fim !== nf) updates.intervalo_fim = nf;
+        } else {
+          if (fd.intervalo_inicio) updates.intervalo_inicio = "";
+          if (fd.intervalo_fim) updates.intervalo_fim = "";
+        }
+        if (t.endedAt && !running) {
+          const nh = toLocalTime(t.endedAt);
+          if (fd.hora_fim !== nh) updates.hora_fim = nh;
+        } else if (running && fd.hora_fim) updates.hora_fim = "";
       }
-      return;
-    }
-    const t = deriveTimes(segments);
-    const updates: Record<string, string> = {};
-    if (t.startedAt && !fd.hora_inicio) updates.hora_inicio = toLocalTime(t.startedAt);
-    const lastInterval = t.intervals[t.intervals.length - 1];
-    if (lastInterval) {
-      const ni = toLocalTime(lastInterval.from), nf = toLocalTime(lastInterval.to);
-      if (fd.intervalo_inicio !== ni) updates.intervalo_inicio = ni;
-      if (fd.intervalo_fim !== nf) updates.intervalo_fim = nf;
-    } else {
-      if (fd.intervalo_inicio) updates.intervalo_inicio = "";
-      if (fd.intervalo_fim) updates.intervalo_fim = "";
-    }
-    if (t.endedAt && !running) {
-      const nh = toLocalTime(t.endedAt);
-      if (fd.hora_fim !== nh) updates.hora_fim = nh;
-    } else if (running && fd.hora_fim) updates.hora_fim = "";
-    if (Object.keys(updates).length === 0) return;
-    const next = { ...fd, ...updates };
-    const patch = { ...(localPatch ?? {}), form_data: next };
-    setLocalPatch(patch); scheduleSave(patch);
+      if (Object.keys(updates).length === 0) return prev;
+      const next = { ...(prev ?? {}), form_data: { ...fd, ...updates } };
+      scheduleSave(next);
+      return next;
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [segments, running]);
+  }, [segments, running, evaluation?.id]);
 
   if (loading || !user || !view) {
     return <AppShell><div className="h-96 animate-pulse rounded-2xl bg-muted/60" /></AppShell>;
