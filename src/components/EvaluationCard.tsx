@@ -51,7 +51,20 @@ export function EvaluationCard({ evaluation, onChange }: { evaluation: Evaluatio
     if (!user) return;
     try {
       if (running) { await pauseTimerLocal(evaluation.id); toast.success("Cronômetro pausado"); }
-      else { await startTimerLocal(evaluation.id, user.id); toast.success("Cronômetro iniciado"); }
+      else {
+        let override: string | undefined;
+        const hhmm = evaluation.form_data?.hora_inicio?.trim();
+        if (hhmm && evaluation.segments.length === 0) {
+          const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm);
+          if (m) {
+            const d = new Date();
+            d.setHours(Number(m[1]), Number(m[2]), 0, 0);
+            if (d.getTime() <= Date.now()) override = d.toISOString();
+          }
+        }
+        await startTimerLocal(evaluation.id, user.id, override);
+        toast.success("Cronômetro iniciado");
+      }
       onChange();
     } catch (e) { toast.error(e instanceof Error ? e.message : "Erro"); }
   };
