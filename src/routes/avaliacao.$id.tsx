@@ -25,6 +25,19 @@ const getNowLocalTime = () => {
   return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
 };
 
+/** Converts "HH:MM" entered today to an ISO timestamp. Returns undefined if invalid or in the future. */
+const localTimeToTodayISO = (hhmm: string | undefined): string | undefined => {
+  if (!hhmm) return undefined;
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm.trim());
+  if (!m) return undefined;
+  const h = Number(m[1]); const min = Number(m[2]);
+  if (h > 23 || min > 59) return undefined;
+  const d = new Date();
+  d.setHours(h, min, 0, 0);
+  if (d.getTime() > Date.now()) return undefined;
+  return d.toISOString();
+};
+
 export const Route = createFileRoute("/avaliacao/$id")({ component: EvaluationPage });
 
 function EvaluationPage() {
