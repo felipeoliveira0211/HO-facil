@@ -1,6 +1,7 @@
 import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
