@@ -20,12 +20,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
       setSession(sess);
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        // Pull/push as soon as we have a session.
+        void import("@/lib/sync/engine").then((m) => m.triggerSyncSoon(50));
+      }
     });
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);
+      if (data.session) {
+        void import("@/lib/sync/engine").then((m) => m.triggerSyncSoon(200));
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, []);
@@ -62,6 +69,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    // Limpa o cache local para o próximo usuário não enxergar dados alheios.
+    try {
+      const { clearLocalData } = await import("@/lib/db/local");
+      await clearLocalData();
+    } catch (err) {
+      console.warn("[auth] clearLocalData failed", err);
+    }
   };
 
   return (
