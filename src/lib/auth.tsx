@@ -99,6 +99,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAdmin(false);
       return;
     }
+
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setIsAdmin(false);
+      return;
+    }
+
     supabase
       .from("user_roles")
       .select("role")
