@@ -22,6 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
+    let initialResolved = false;
 
     const persistSessionSnapshot = async (sess: Session | null) => {
       try {
@@ -47,7 +48,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           getMeta("auth:last-user-id"),
           getMeta("auth:last-user-email"),
         ]);
-        if (!userId || cancelled) return;
+        if (!userId || cancelled) {
+          if (!cancelled) {
+            setSession(null);
+          }
+          return;
+        }
 
         setSession({ user: { id: userId, email: email || undefined } as User } as Session);
       } catch (err) {
@@ -57,34 +63,68 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+    const applySession = async (sess: Session) => {
+      if (cancelled) return;
       setSession(sess);
-      void persistSessionSnapshot(sess);
-      setLoading(false);
-      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+      await persistSessionSnapshot(sess);
+      if (!cancelled) setLoading(false);
+    };
+
+    const handleMissingSession = async ({
+      clearSnapshot = false,
+    }: {
+      clearSnapshot?: boolean;
+    } = {}) => {
+      if (cancelled) return;
+
+      const offline = typeof navigator !== "undefined" && !navigator.onLine;
+      if (offline) {
+        await restoreOfflineSession();
+        return;
+      }
+
+      if (clearSnapshot) {
+        await persistSessionSnapshot(null);
+      }
+
+      if (!cancelled) {
+        setSession(null);
+        setLoading(false);
+      }
+    };
+
+    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+      if (cancelled) return;
+
+      if (event === "SIGNED_OUT") {
+        void handleMissingSession({ clearSnapshot: true });
+        return;
+      }
+
+      if (sess?.user) {
+        void applySession(sess);
+      } else if (initialResolved) {
+        void handleMissingSession();
+      } else {
+        return;
+      }
+
+      if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && sess?.user) {
         // Pull/push as soon as we have a session.
         void import("@/lib/sync/engine").then((m) => m.triggerSyncSoon(50));
       }
     });
     supabase.auth.getSession().then(async ({ data, error }) => {
+      initialResolved = true;
       if (cancelled) return;
 
-      if (data.session) {
-        setSession(data.session);
-        await persistSessionSnapshot(data.session);
-        setLoading(false);
+      if (data.session?.user) {
+        await applySession(data.session);
         void import("@/lib/sync/engine").then((m) => m.triggerSyncSoon(200));
         return;
       }
 
-      if (!navigator.onLine || error) {
-        await restoreOfflineSession();
-        return;
-      }
-
-      await persistSessionSnapshot(null);
-      setSession(null);
-      setLoading(false);
+      await handleMissingSession({ clearSnapshot: !error });
     });
 
     return () => {
