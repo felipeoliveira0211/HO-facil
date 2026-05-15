@@ -87,6 +87,15 @@ export async function deleteEvaluation(id: string): Promise<void> {
   await enqueue("evaluations", "delete", id, { id });
 }
 
+export async function purgeLocalEvaluation(id: string): Promise<void> {
+  const db = getDb();
+  await Promise.all([
+    db.evaluations.delete(id),
+    db.time_segments.where("evaluation_id").equals(id).delete(),
+    db.outbox.where("rowId").equals(id).delete(),
+  ]);
+}
+
 export async function getEvaluation(id: string): Promise<LocalEvaluation | undefined> {
   return getDb().evaluations.get(id);
 }
@@ -104,6 +113,7 @@ export function useEvaluations(filter?: {
       let filtered = filter?.userId ? all.filter((e) => e.user_id === filter.userId) : all;
       if (filter?.excludeCompleted) filtered = filtered.filter((e) => e.status !== "completed");
       if (filter?.onlyCompleted) filtered = filtered.filter((e) => e.status === "completed");
+      filtered = filtered.filter((e) => !!e.user_id);
       filtered.sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || ""));
       return filtered;
     }).subscribe({
