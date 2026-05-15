@@ -65,8 +65,8 @@ export async function runSync(): Promise<void> {
   _running = true;
   notify();
   try {
-    await pull(sess.session.user.id);
     await push(sess.session.user.id);
+    await pull(sess.session.user.id);
   } catch (err) {
     console.warn("[sync] run failed", err);
   } finally {
@@ -83,8 +83,6 @@ async function pull(userId: string) {
   // Equipments + responsibles are global-readable; pull everything visible.
   const sinceEquip = (await getMeta("equipments:lastPull")) || "1970-01-01T00:00:00Z";
   const sinceResp = (await getMeta("responsibles:lastPull")) || "1970-01-01T00:00:00Z";
-  const sinceEval = (await getMeta(`evaluations:lastPull:${userId}`)) || "1970-01-01T00:00:00Z";
-  const sinceSeg = (await getMeta(`segments:lastPull:${userId}`)) || "1970-01-01T00:00:00Z";
 
   const [equipsRes, respsRes, evalsRes, segsRes] = await Promise.all([
     supabase
@@ -100,13 +98,11 @@ async function pull(userId: string) {
       .select(
         "id, user_id, type, status, title, company, worker, estimated_duration_minutes, form_data, worker_signature_url, started_at, completed_at, created_at, updated_at",
       )
-      .eq("user_id", userId)
-      .gt("updated_at", sinceEval),
+      .eq("user_id", userId),
     supabase
       .from("time_segments")
       .select("id, evaluation_id, user_id, started_at, ended_at")
-      .eq("user_id", userId)
-      .gt("started_at", sinceSeg),
+      .eq("user_id", userId),
   ]);
 
   const nowIso = new Date().toISOString();
@@ -130,6 +126,7 @@ async function pull(userId: string) {
   }
 
   if (evalsRes.data) {
+    const serverIds = new Set(evalsRes.data.map((r) => r.id));
     for (const r of evalsRes.data) {
       const local = await db.evaluations.get(r.id);
       if (local?._pending) continue;
@@ -139,15 +136,32 @@ async function pull(userId: string) {
         _pending: 0,
       });
     }
+
+    const localRows = await db.evaluations.where("user_id").equals(userId).toArray();
+    for (const row of localRows) {
+      if (!row._pending && !serverIds.has(row.id)) {
+        await db.evaluations.delete(row.id);
+      }
+    }
+
     await setMeta(`evaluations:lastPull:${userId}`, nowIso);
   }
 
   if (segsRes.data) {
+    const serverIds = new Set(segsRes.data.map((r) => r.id));
     for (const r of segsRes.data) {
       const local = await db.time_segments.get(r.id);
       if (local?._pending) continue;
       await db.time_segments.put({ ...(r as LocalTimeSegment), _pending: 0 });
     }
+
+    const localRows = await db.time_segments.where("user_id").equals(userId).toArray();
+    for (const row of localRows) {
+      if (!row._pending && !serverIds.has(row.id)) {
+        await db.time_segments.delete(row.id);
+      }
+    }
+
     await setMeta(`segments:lastPull:${userId}`, nowIso);
   }
 }
